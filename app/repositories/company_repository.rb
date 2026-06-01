@@ -3,6 +3,8 @@
 class CompanyRepository
   include CompanyRepositoryInterface
 
+  ALLOWED_ORDER_COLUMNS = %w[nombre telefono direccion].freeze
+
   # Retorna todas las compañías
   def all_companies
     Company.all
@@ -33,5 +35,19 @@ class CompanyRepository
   # Retorna los empleados asociados a la compañía
   def employees_of(id)
     find_company(id).employees
+  end
+
+  # ── MÓDULO 1: Paginación de empleados de una compañía ───────────────────
+
+  def employees_paged(company_id:, pagina:, tamano:)
+    company = find_company(company_id)
+    scope   = company.employees
+    total   = scope.count
+    data    = scope.offset((pagina.to_i - 1) * tamano.to_i).limit(tamano.to_i)
+    { data: data, total: total }
+  end
+
+  def exists?(id)
+    Company.exists?(id)
   end
 end

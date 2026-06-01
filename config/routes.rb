@@ -1,21 +1,29 @@
 Rails.application.routes.draw do
   namespace :api do
-    # Rutas de compañías
-    # IMPORTANTE: con_empleados va en `collection` para evitar que Rails
-    # lo interprete como un :id con valor "con_empleados"
+
+    # ── Autenticación (Módulo 5) ─────────────────────────────────────────
+    post "auth/registro", to: "auth#registro"
+    post "auth/login",    to: "auth#login"
+    get  "auth/perfil",   to: "auth#perfil"
+
+    # ── Compañías ────────────────────────────────────────────────────────
     resources :companies, path: "companias" do
       collection do
-        post :con_empleados  # POST /api/companias/con_empleados — endpoint transaccional
+        post :con_empleados   # POST /api/companias/con_empleados — transaccional (ADMIN)
       end
       member do
-        get :empleados       # GET /api/companias/:id/empleados
+        get :empleados         # GET /api/companias/:id/empleados?pagina=&tamano=
       end
     end
 
-    # Rutas de empleados — acepta PATCH y PUT para actualizar
-    resources :employees, path: "empleados"
+    # ── Empleados ────────────────────────────────────────────────────────
+    resources :employees, path: "empleados" do
+      collection do
+        post   :lote,           action: :bulk_create    # POST /api/empleados/lote
+        delete :lote,           action: :bulk_destroy   # DELETE /api/empleados/lote
+      end
+    end
   end
 
-  # Health check
   get "up" => "rails/health#show", as: :rails_health_check
 end

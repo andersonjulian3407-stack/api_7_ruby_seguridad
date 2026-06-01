@@ -1,22 +1,18 @@
-# ONION: Capa de Dominio - Interfaz que define las operaciones permitidas para el repositorio de empleados
+# ONION: Capa de Dominio — Interfaz del repositorio de empleados
+# Define el contrato que debe cumplir cualquier implementación concreta
 module EmployeeRepositoryInterface
-  def all_employees
-    raise NotImplementedError, "#{self.class}#all_employees no implementado"
-  end
+  # Módulo 1: Operaciones base
+  def all_employees = raise NotImplementedError
+  def find_employee(id) = raise NotImplementedError
+  def create_employee(data) = raise NotImplementedError
+  def update_employee(id, data) = raise NotImplementedError
+  def delete_employee(id) = raise NotImplementedError
 
-  def find_employee(id)
-    raise NotImplementedError, "#{self.class}#find_employee no implementado"
-  end
-
-  def create_employee(data)
-    raise NotImplementedError, "#{self.class}#create_employee no implementado"
-  end
-
-  def update_employee(id, data)
-    raise NotImplementedError, "#{self.class}#update_employee no implementado"
-  end
-
-  def delete_employee(id)
-    raise NotImplementedError, "#{self.class}#delete_employee no implementado"
-  end
+  # Módulo 1: Colecciones y paginación
+  def create_range(employees_data) = raise NotImplementedError
+  def delete_range(ids) = raise NotImplementedError
+  def get_paged(pagina:, tamano:, orden:, dir:, buscar:) = raise NotImplementedError
+  def get_paged_by_company(company_id:, pagina:, tamano:) = raise NotImplementedError
+  def patch_partial(id, cambios) = raise NotImplementedError
+  def email_exists?(correo, except_id: nil) = raise NotImplementedError
 end

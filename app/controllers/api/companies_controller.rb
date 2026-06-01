@@ -1,51 +1,64 @@
 # ONION: Capa Externa (UI/Presentación) - Recibe peticiones HTTP y responde con JSON
 module Api
   class CompaniesController < ApplicationController
+    before_action :authenticate_request!, except: []
     before_action :set_service
 
     # GET /api/companias
     def index
-      companies = @service.get_all
-      render json: companies, status: :ok
+      render json: @service.get_all, status: :ok
     end
 
     # GET /api/companias/:id
     def show
-      company = @service.get_by_id(params[:id])
-      render json: company, status: :ok
+      render json: @service.get_by_id(params[:id]), status: :ok
     end
 
     # POST /api/companias
     def create
+      authorize_roles!("ADMIN", "USUARIO")
       dto = CompanyDto.new(company_params)
-      company = @service.create(dto)
-      render json: company, status: :created
+      render json: @service.create(dto), status: :created
     end
 
     # PUT/PATCH /api/companias/:id
     def update
+      authorize_roles!("ADMIN", "USUARIO")
       dto = CompanyDto.new(company_params)
-      company = @service.update(params[:id], dto)
-      render json: company, status: :ok
+      render json: @service.update(params[:id], dto), status: :ok
     end
 
     # DELETE /api/companias/:id
     def destroy
+      authorize_roles!("ADMIN")
       @service.delete(params[:id])
       head :no_content
     end
 
-    # GET /api/companias/:id/empleados
+    # GET /api/companias/:id/empleados?pagina=1&tamano=10
     def empleados
-      employees = @service.employees_of(params[:id])
-      render json: employees, status: :ok
+      pagina = (params[:pagina] || 1).to_i
+      tamano = (params[:tamano] || 10).to_i
+
+      if pagina < 1 || tamano < 1
+        return render json: { error: "pagina y tamano deben ser >= 1" }, status: :bad_request
+      end
+
+      result = @service.employees_paged(
+        company_id: params[:id], pagina: pagina, tamano: tamano
+      )
+      render json: {
+        datos:        result[:datos],
+        pagina:       result[:pagina],
+        tamano:       result[:tamano],
+        total:        result[:total],
+        totalPaginas: result[:totalPaginas]
+      }, status: :ok
     end
 
-    # POST /api/companias/con_empleados
-    # ENDPOINT TRANSACCIONAL — Demuestra Unit of Work:
-    # Crea compañía + empleados en una sola transacción atómica.
-    # Si un empleado tiene correo inválido → ROLLBACK TOTAL.
+    # POST /api/companias/con_empleados — endpoint transaccional (Solo ADMIN)
     def con_empleados
+      authorize_roles!("ADMIN")
       company_data = params.require(:company)
                            .permit(:nombre, :direccion, :telefono)
                            .to_h.symbolize_keys

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 1.8rem;
+      color: #7c3aed;
+      margin-bottom: 0.3rem;
+    }
+    .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 2rem; }
+
+    /* Login */
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1rem; color: #a78bfa; margin-bottom: 1rem; }
+    .row { display: flex; gap: 0.8rem; align-items: flex-end; flex-wrap: wrap; }
+    label { font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 4px; }
+    input {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.9rem;
+      width: 240px;
+    }
+    input:focus { outline: none; border-color: #7c3aed; }
+    button {
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1.4rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #6d28d9; }
+    button:disabled { background: #374151; cursor: not-allowed; }
+
+    /* Token display */
+    .token-box {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      font-size: 0.75rem;
+      color: #34d399;
+      word-break: break-all;
+      margin-top: 1rem;
+      display: none;
+    }
+    .token-box.show { display: block; }
+    .badge {
+      display: inline-block;
+      background: #064e3b;
+      color: #34d399;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Endpoints */
+    .endpoint-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .method {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: #1e3a5f;
+      color: #60a5fa;
+    }
+    .url-input {
+      flex: 1;
+      min-width: 200px;
+      font-family: monospace;
+    }
+    .btn-get { background: #1d4ed8; }
+    .btn-get:hover { background: #1e40af; }
+
+    /* Response */
+    pre {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.8rem;
+      overflow: auto;
+      max-height: 400px;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .status-ok { background: #064e3b; color: #34d399; }
+    .status-err { background: #7f1d1d; color: #f87171; }
+    .hidden { display: none; }
+
+    .shortcuts { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .shortcut {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      color: #94a3b8;
+      transition: all 0.15s;
+    }
+    .shortcut:hover { border-color: #7c3aed; color: #a78bfa; background: #1e2130; }
+  </style>
+</head>
+<body>
+
+<h1>🔮 API Explorer</h1>
+<p class="subtitle">Ruby on Rails · companies_api_development · localhost:3000</p>
+
+<!-- LOGIN -->
+<div class="card">
+  <h2>1. Iniciar sesión</h2>
+  <div class="row">
+    <div>
+      <label>Correo</label>
+      <input type="email" id="correo" value="admin@api.com">
+    </div>
+    <div>
+      <label>Contraseña</label>
+      <input type="password" id="password" value="Admin@1234!">
+    </div>
+    <button onclick="login()">Obtener Token</button>
+  </div>
+  <div class="token-box" id="tokenBox">
+    <div class="badge">✓ Autenticado</div><br>
+    <span id="tokenText"></span>
+  </div>
+</div>
+
+<!-- CONSULTAR -->
+<div class="card">
+  <h2>2. Consultar endpoint</h2>
+
+  <div class="shortcuts" id="shortcuts">
+    <span class="shortcut" onclick="setUrl('/api/companias')">GET /api/companias</span>
+    <span class="shortcut" onclick="setUrl('/api/empleados')">GET /api/empleados</span>
+    <span class="shortcut" onclick="setUrl('/api/empleados?pagina=1&tamano=5')">GET /api/empleados?pagina=1&tamano=5</span>
+    <span class="shortcut" onclick="setUrl('/api/auth/perfil')">GET /api/auth/perfil</span>
+  </div>
+
+  <div class="endpoint-row">
+    <span class="method">GET</span>
+    <input type="text" id="endpoint" class="url-input" value="/api/companias" placeholder="/api/companias">
+    <button class="btn-get" onclick="consultar()">Consultar</button>
+  </div>
+
+  <div id="responseArea" class="hidden">
+    <span class="status" id="statusBadge"></span>
+    <pre id="responseBox"></pre>
+  </div>
+</div>
+
+<script>
+  let token = null;
+
+  async function login() {
+    const correo = document.getElementById('correo').value;
+    const password = document.getElementById('password').value;
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo, password })
+      });
+      const data = await res.json();
+      if (data.token) {
+        token = data.token;
+        const box = document.getElementById('tokenBox');
+        document.getElementById('tokenText').textContent = token;
+        box.classList.add('show');
+      } else {
+        alert('Error: ' + JSON.stringify(data));
+      }
+    } catch (e) {
+      alert('Error de conexión: ' + e.message);
+    }
+  }
+
+  function setUrl(url) {
+    document.getElementById('endpoint').value = url;
+  }
+
+  async function consultar() {
+    if (!token) { alert('Primero obtén el token haciendo login'); return; }
+    const endpoint = document.getElementById('endpoint').value;
+    try {
+      const res = await fetch(endpoint, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      const badge = document.getElementById('statusBadge');
+      badge.textContent = res.status + ' ' + (res.ok ? 'OK' : 'Error');
+      badge.className = 'status ' + (res.ok ? 'status-ok' : 'status-err');
+      document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+      document.getElementById('responseArea').classList.remove('hidden');
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+</script>
+</body>
+</html>

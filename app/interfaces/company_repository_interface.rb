@@ -1,26 +1,11 @@
-# ONION: Capa de Dominio - Interfaz que define las operaciones permitidas para el repositorio de compañías
+# ONION: Capa de Dominio — Interfaz del repositorio de compañías
 module CompanyRepositoryInterface
-  def all_companies
-    raise NotImplementedError, "#{self.class}#all_companies no implementado"
-  end
-
-  def find_company(id)
-    raise NotImplementedError, "#{self.class}#find_company no implementado"
-  end
-
-  def create_company(data)
-    raise NotImplementedError, "#{self.class}#create_company no implementado"
-  end
-
-  def update_company(id, data)
-    raise NotImplementedError, "#{self.class}#update_company no implementado"
-  end
-
-  def delete_company(id)
-    raise NotImplementedError, "#{self.class}#delete_company no implementado"
-  end
-
-  def employees_of(id)
-    raise NotImplementedError, "#{self.class}#employees_of no implementado"
-  end
+  def all_companies = raise NotImplementedError
+  def find_company(id) = raise NotImplementedError
+  def create_company(data) = raise NotImplementedError
+  def update_company(id, data) = raise NotImplementedError
+  def delete_company(id) = raise NotImplementedError
+  def employees_of(id) = raise NotImplementedError
+  def employees_paged(company_id:, pagina:, tamano:) = raise NotImplementedError
+  def exists?(id) = raise NotImplementedError
 end

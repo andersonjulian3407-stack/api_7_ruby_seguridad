@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_23_215452) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_30_000001) do
   create_table "companies", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "direccion", null: false
@@ -33,5 +33,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_215452) do
     t.index ["correo"], name: "index_employees_on_correo", unique: true
   end
 
+  create_table "sysdiagrams", primary_key: "diagram_id", id: :integer, force: :cascade do |t|
+    t.binary "definition"
+    t.string "name", null: false
+    t.integer "principal_id", null: false
+    t.integer "version"
+    t.index ["principal_id", "name"], name: "UK_principal_name", unique: true
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.bigint "company_id"
+    t.string "contrasena_hash", null: false
+    t.string "correo", null: false
+    t.datetime "created_at", null: false
+    t.datetime "fecha_creacion", default: -> { "getdate()" }, null: false
+    t.string "nombre", null: false
+    t.string "rol", default: "USUARIO", null: false
+    t.datetime "updated_at", null: false
+    t.index ["correo"], name: "index_users_on_correo", unique: true
+  end
+
   add_foreign_key "employees", "companies"
+  add_foreign_key "users", "companies", on_delete: :nullify
 end
