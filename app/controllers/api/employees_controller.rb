@@ -41,6 +41,7 @@ module Api
     def update
       authorize_roles!("ADMIN", "USUARIO")
       authorize_ownership!(params[:id])
+      authorize_update_policy!
 
       if request.patch?
         authorize_salary_limit!(patch_source_params[:salario].to_f) if patch_source_params[:salario]
@@ -56,6 +57,7 @@ module Api
 
     def destroy
       authorize_roles!("ADMIN")
+      authorize_delete_policy!
       @service.delete(params[:id])
       head :no_content
     end
@@ -78,6 +80,7 @@ module Api
 
     def bulk_destroy
       authorize_roles!("ADMIN")
+      authorize_delete_policy!
       ids = params.require(:ids)
       count = @service.delete_batch(ids)
       render json: { mensaje: "#{count} empleado(s) eliminados exitosamente" },

@@ -1,9 +1,11 @@
-# Módulo 4: Pruebas de integración — endpoints de empleados
+# Modulo 4: Pruebas de integracion - endpoints de empleados
 require "rails_helper"
 
 RSpec.describe "Api::Employees", type: :request do
-  let(:admin)   { create(:user, :admin) }
+  let(:admin) { create(:user, :admin) }
   let(:usuario) { create(:user) }
+  let(:admin_bogota) { create(:user, :admin_bogota) }
+  let(:admin_medellin) { create(:user, :admin_medellin) }
 
   def auth_header(user)
     token = AuthService.new.login(correo: user.correo, password: "password123")[:token]
@@ -13,7 +15,7 @@ RSpec.describe "Api::Employees", type: :request do
   describe "GET /api/empleados" do
     before { create_list(:employee, 5) }
 
-    it "retorna 200 con estructura de paginación" do
+    it "retorna 200 con estructura de paginacion" do
       get "/api/empleados?pagina=1&tamano=3", headers: auth_header(usuario)
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
@@ -33,7 +35,7 @@ RSpec.describe "Api::Employees", type: :request do
     it "crea un empleado y retorna 201" do
       payload = {
         employee: {
-          nombre: "Laura", apellido: "Gómez", correo: "laura.test@x.com",
+          nombre: "Laura", apellido: "Gomez", correo: "laura.test@x.com",
           cargo: "Dev", salario: 4000, company_id: company.id
         }
       }
@@ -41,7 +43,7 @@ RSpec.describe "Api::Employees", type: :request do
       expect(response).to have_http_status(:created)
     end
 
-    it "retorna 422 si el correo es inválido" do
+    it "retorna 422 si el correo es invalido" do
       payload = {
         employee: {
           nombre: "X", apellido: "Y", correo: "no-es-correo",
@@ -60,25 +62,61 @@ RSpec.describe "Api::Employees", type: :request do
 
   describe "PATCH /api/empleados/:id" do
     let(:company) { create(:company) }
-    let(:emp)     { create(:employee, company: company) }
+    let(:emp) { create(:employee, company: company) }
 
     it "actualiza parcialmente y retorna 200" do
       patch "/api/empleados/#{emp.id}",
-            params: { cargo: "Líder Técnico" },
+            params: { cargo: "Lider Tecnico" },
             headers: auth_header(admin)
       expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body)["cargo"]).to eq("Líder Técnico")
+      expect(JSON.parse(response.body)["cargo"]).to eq("Lider Tecnico")
+    end
+
+    it "retorna 403 si el admin de Medellin intenta PATCH" do
+      patch "/api/empleados/#{emp.id}",
+            params: { cargo: "Lider Tecnico" },
+            headers: auth_header(admin_medellin)
+      expect(response).to have_http_status(:forbidden)
     end
   end
 
-  describe "POST /api/empleados/lote — creación masiva" do
+  describe "PUT /api/empleados/:id" do
+    let(:company) { create(:company) }
+    let(:emp) { create(:employee, company: company) }
+
+    it "retorna 403 si el admin de Medellin intenta PUT" do
+      put "/api/empleados/#{emp.id}",
+          params: {
+            employee: {
+              nombre: emp.nombre,
+              apellido: emp.apellido,
+              correo: emp.correo,
+              cargo: "Lider Tecnico",
+              salario: emp.salario,
+              company_id: company.id
+            }
+          },
+          headers: auth_header(admin_medellin)
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  describe "DELETE /api/empleados/:id" do
+    it "retorna 403 si el admin de Bogota intenta eliminar" do
+      emp = create(:employee)
+      delete "/api/empleados/#{emp.id}", headers: auth_header(admin_bogota)
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  describe "POST /api/empleados/lote - creacion masiva" do
     let(:company) { create(:company) }
 
-    it "crea múltiples empleados y retorna 201" do
+    it "crea multiples empleados y retorna 201" do
       payload = {
         empleados: [
           { nombre: "A", apellido: "B", correo: "ab.lote@x.com", cargo: "Dev", salario: 2000, company_id: company.id },
-          { nombre: "C", apellido: "D", correo: "cd.lote@x.com", cargo: "QA",  salario: 2200, company_id: company.id }
+          { nombre: "C", apellido: "D", correo: "cd.lote@x.com", cargo: "QA", salario: 2200, company_id: company.id }
         ]
       }
       post "/api/empleados/lote", params: payload, headers: auth_header(admin)
@@ -86,7 +124,7 @@ RSpec.describe "Api::Employees", type: :request do
     end
   end
 
-  describe "DELETE /api/empleados/lote — eliminación múltiple" do
+  describe "DELETE /api/empleados/lote - eliminacion multiple" do
     it "elimina empleados seleccionados y retorna 200" do
       emps = create_list(:employee, 2)
       delete "/api/empleados/lote",

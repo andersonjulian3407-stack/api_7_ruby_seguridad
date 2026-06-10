@@ -1,8 +1,7 @@
 source "https://rubygems.org"
 
 gem "rails", "~> 8.1.3"
-gem "activerecord-sqlserver-adapter"
-gem "tiny_tds"
+gem "pg", "~> 1.5"
 gem "puma", ">= 5.0"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "solid_cache"
@@ -16,22 +15,21 @@ gem "rack-cors"
 gem "dotenv-rails"
 
 # Módulo 5: JWT y hashing de contraseñas
-gem "jwt"           # JSON Web Tokens — firma y verificación con HS256
-gem "bcrypt"        # Hashing seguro de contraseñas (uses by has_secure_password)
+gem "jwt"
+gem "bcrypt"
 
-# Módulo 4: Pruebas
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "bundler-audit", require: false
   gem "brakeman", require: false
   gem "rubocop-rails-omakase", require: false
-  gem "rspec"              # Ejecutable bundle exec rspec
-  gem "rspec-rails"        # Framework de pruebas
-  gem "factory_bot_rails"  # Factories para datos de prueba
-  gem "faker"              # Datos falsos para tests
+  gem "rspec"
+  gem "rspec-rails"
+  gem "factory_bot_rails"
+  gem "faker"
 end
 
 group :test do
-  gem "shoulda-matchers"   # Matchers adicionales para RSpec
-  gem "database_cleaner-active_record"  # Limpieza de BD entre tests
+  gem "shoulda-matchers"
+  gem "database_cleaner-active_record"
 end

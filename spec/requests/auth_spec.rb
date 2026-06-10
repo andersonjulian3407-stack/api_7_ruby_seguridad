@@ -9,7 +9,22 @@ RSpec.describe "Api::Auth", type: :request do
       }
       expect(response).to have_http_status(:created)
       body = JSON.parse(response.body)
-      expect(body).to include("id", "correo", "rol")
+      expect(body).to include("id", "correo", "roles")
+    end
+
+    it "registra roles y claims relacionales" do
+      post "/api/auth/registro", params: {
+        nombre: "Admin Bogota",
+        correo: "admin.nuevo@test.com",
+        password: "secret123",
+        roles: ["ADMIN", "USUARIO"],
+        claims: [{ tipo: "ciudad", valor: "Bogota" }]
+      }
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body["roles"]).to match_array(["ADMIN", "USUARIO"])
+      expect(body["claims"]).to include("ciudad" => "Bogota")
     end
 
     it "retorna 422 si el correo ya existe" do
@@ -30,6 +45,9 @@ RSpec.describe "Api::Auth", type: :request do
       body = JSON.parse(response.body)
       expect(body).to include("token", "tipo", "usuario")
       expect(body["tipo"]).to eq("Bearer")
+      payload = AuthService.decode_token(body["token"])
+      expect(payload[:roles]).to include("USUARIO")
+      expect(payload).to include(:claims)
     end
 
     it "retorna 401 con contraseña incorrecta" do

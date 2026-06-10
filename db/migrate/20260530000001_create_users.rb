@@ -6,7 +6,7 @@ class CreateUsers < ActiveRecord::Migration[8.1]
       t.string  :contrasena_hash, null: false
       t.string  :rol,             null: false, default: "USUARIO"  # ADMIN | USUARIO
       t.bigint  :company_id                                          # opcional — para políticas
-      t.datetime :fecha_creacion, null: false, default: -> { "getdate()" }
+      t.datetime :fecha_creacion, null: false, default: -> { "NOW()" }
 
       t.timestamps
     end

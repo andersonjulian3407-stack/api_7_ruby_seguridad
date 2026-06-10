@@ -1,7 +1,7 @@
 # API Layer — ApplicationController base
 # Módulo 3: Manejo global de errores
 # Módulo 5: Autenticación JWT y autorización por roles
-# Módulo 6: Autorización por políticas (ownership)
+# Módulo 6: Autorización por políticas (ownership) y claims relacionales
 class ApplicationController < ActionController::API
 
   # ── Manejo global de errores ───────────────────────────────────────────
@@ -16,7 +16,6 @@ class ApplicationController < ActionController::API
     render json: { error: "Parámetro requerido faltante: #{e.message}" }, status: :bad_request
   end
 
-  # Módulo 3: errores de validación del ORM → 422 con formato uniforme
   rescue_from ActiveRecord::RecordInvalid do |e|
     Rails.logger.warn("[API] 422 RecordInvalid: #{e.message}")
     errores = e.record.errors.map do |err|
@@ -26,7 +25,6 @@ class ApplicationController < ActionController::API
            status: :unprocessable_entity
   end
 
-  # Módulo 3: errores del DTO (capa Application)
   rescue_from ValidationError do |e|
     Rails.logger.warn("[API] 422 ValidationError: #{e.message}")
     errores = e.field_errors.map { |m| { detalle: m } }
@@ -34,20 +32,16 @@ class ApplicationController < ActionController::API
            status: :unprocessable_entity
   end
 
-  # Módulo 5: autenticación fallida → 401
   rescue_from AuthenticationError do |e|
     render json: { error: e.message }, status: :unauthorized
   end
 
-  # Módulo 5/6: autorización fallida → 403
   rescue_from AuthorizationError do |e|
     render json: { error: e.message }, status: :forbidden
   end
 
   # ── Módulo 5: Autenticación JWT ────────────────────────────────────────
 
-  # Extrae y verifica el JWT del header Authorization: Bearer <token>
-  # Pone el usuario en @current_user
   def authenticate_request!
     header = request.headers["Authorization"]
     token  = header&.split(" ")&.last
@@ -71,26 +65,25 @@ class ApplicationController < ActionController::API
   end
 
   # ── Módulo 5: Autorización por roles ───────────────────────────────────
+  #
+  # Lee el array `roles` del payload JWT. Un usuario pasa si tiene
+  # AL MENOS UNO de los roles requeridos (lógica OR, como ASP.NET [Authorize(Roles=...)])
 
-  # Verifica que el usuario autenticado tenga uno de los roles permitidos
-  def authorize_roles!(*roles)
-    unless current_user && roles.include?(current_user.rol)
+  def authorize_roles!(*required_roles)
+    user_roles = Array(@current_payload[:roles])
+    unless current_user && (required_roles & user_roles).any?
       raise AuthorizationError,
-            "Acceso denegado. Se requiere uno de estos roles: #{roles.join(', ')}"
+            "Acceso denegado. Se requiere uno de estos roles: #{required_roles.join(', ')}"
     end
   end
 
   # ── Módulo 6: Política de propiedad (ownership) ────────────────────────
   #
-  # Equivalente a ASP.NET Core:
-  #   [Authorize(Policy = "EsPropietarioDeCompania")]
-  #   con EsPropietarioHandler que evalúa claims vs. recurso
-  #
   # Regla: un USUARIO solo puede modificar empleados de SU compañía.
   # Un ADMIN puede modificar cualquier empleado (exento de la política).
 
   def authorize_ownership!(employee_id)
-    return if current_user.admin?  # ADMIN no tiene restricción
+    return if current_user.admin?
 
     employee = EmployeeRepository.new.find_employee(employee_id)
 
@@ -111,6 +104,37 @@ class ApplicationController < ActionController::API
     if salario.to_f > SALARY_LIMIT
       raise AuthorizationError,
             "Política 'LimiteSalario': solo ADMIN puede asignar salarios mayores a #{SALARY_LIMIT}"
+    end
+  end
+
+  # ── Módulo 6: Política de Administración por Ciudad ────────────────────
+  #
+  # Lee los claims consolidados del payload JWT (incluye claims de usuario + rol).
+  # Esto es equivalente a leer User.Claims en ASP.NET Core desde el HttpContext.
+
+  # El administrador de Bogotá puede hacer CRUD completo EXCEPTO eliminar
+  def authorize_delete_policy!
+    claims = @current_payload[:claims] || {}
+    if current_user.admin? && claims["ciudad"] == "Bogota"
+      raise AuthorizationError,
+            "Acceso denegado: El administrador de Bogotá no tiene permitido eliminar registros."
+    end
+  end
+
+  # El administrador de Medellín puede hacer CRUD completo EXCEPTO PATCH
+  def authorize_update_policy!
+    claims = @current_payload[:claims] || {}
+    if current_user.admin? && claims["ciudad"] == "Medellin"
+      raise AuthorizationError,
+            "Acceso denegado: El administrador de Medellin no tiene permitido actualizar registros."
+    end
+  end
+
+  def authorize_patch_policy!
+    claims = @current_payload[:claims] || {}
+    if current_user.admin? && claims["ciudad"] == "Medellin"
+      raise AuthorizationError,
+            "Acceso denegado: El administrador de Medellín no tiene permitido realizar modificaciones parciales (PATCH)."
     end
   end
 end

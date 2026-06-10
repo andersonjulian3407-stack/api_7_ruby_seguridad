@@ -24,6 +24,7 @@ module Api
     # PUT/PATCH /api/companias/:id
     def update
       authorize_roles!("ADMIN", "USUARIO")
+      authorize_update_policy!
       dto = CompanyDto.new(company_params)
       render json: @service.update(params[:id], dto), status: :ok
     end
@@ -31,6 +32,7 @@ module Api
     # DELETE /api/companias/:id
     def destroy
       authorize_roles!("ADMIN")
+      authorize_delete_policy!
       @service.delete(params[:id])
       head :no_content
     end

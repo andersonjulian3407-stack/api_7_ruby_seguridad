@@ -9,21 +9,25 @@ Rails.application.routes.draw do
     # ── Compañías ────────────────────────────────────────────────────────
     resources :companies, path: "companias" do
       collection do
-        post :con_empleados   # POST /api/companias/con_empleados — transaccional (ADMIN)
+        post :con_empleados
       end
       member do
-        get :empleados         # GET /api/companias/:id/empleados?pagina=&tamano=
+        get :empleados
       end
     end
 
     # ── Empleados ────────────────────────────────────────────────────────
     resources :employees, path: "empleados" do
       collection do
-        post   :lote,           action: :bulk_create    # POST /api/empleados/lote
-        delete :lote,           action: :bulk_destroy   # DELETE /api/empleados/lote
+        post   :lote, action: :bulk_create
+        delete :lote, action: :bulk_destroy
       end
     end
   end
+
+  # Raíz: responde JSON con info de la API
+  root to: proc { [200, { "Content-Type" => "application/json" },
+    ['{"status":"ok","api":"Companies API","version":"1.0","docs":"/api/auth/login"}'] ] }
 
   get "up" => "rails/health#show", as: :rails_health_check
 end
